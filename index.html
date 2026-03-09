@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoundGrab — Scarica musica da YouTube e SoundCloud gratis</title>
+  <meta name="description" content="SoundGrab: scarica le tue canzoni da YouTube e SoundCloud in MP3 o WAV, con opzione testo clean per censurare automaticamente le parolacce.">
+  <meta property="og:title" content="SoundGrab — Scarica musica gratis">
+  <meta property="og:description" content="Scarica musica da YouTube e SoundCloud in MP3 o WAV con censura automatica delle parolacce.">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎵</text></svg>">
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-animation">
+    <div class="bg-orb"></div>
+    <div class="bg-orb"></div>
+    <div class="bg-orb"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-content">
+      <a href="#" class="logo">
+        <span class="logo-icon">🎵</span>SoundGrab
+      </a>
+      <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#download">Download</a></li>
+        <li><a href="#clean">Clean</a></li>
+        <li><a href="#charts">Classifiche</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        100% Gratuito · Nessun account richiesto
+      </div>
+
+      <h1>
+        Scarica la tua musica<br>
+        <span class="gradient-text">da YouTube & SoundCloud</span>
+      </h1>
+
+      <p>
+        Incolla il link della tua canzone e scaricala in MP3 o WAV. 
+        Opzione "Clean" per censurare automaticamente le parolacce in italiano, inglese e spagnolo.
+      </p>
+
+      <!-- URL Input -->
+      <div class="input-section">
+        <div class="input-wrapper">
+          <span class="input-icon">🔗</span>
+          <input 
+            type="url" 
+            class="url-input" 
+            id="urlInput" 
+            placeholder="Incolla il link di YouTube o SoundCloud..."
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button class="btn-analyze" id="btnAnalyze">
+            <span id="btnAnalyzeText">Analizza</span>
+          </button>
+        </div>
+
+        <div class="input-hint">
+          <span>Piattaforme supportate:</span>
+          <span class="platform-icons">
+            <span title="YouTube">▶️</span>
+            <span title="SoundCloud">☁️</span>
+          </span>
+          <span>— Incolla un link diretto</span>
+        </div>
+
+        <!-- Platform Detection -->
+        <div class="platform-badge" id="platformBadge">
+          <span id="platformIcon">▶️</span>
+          <span id="platformName">YouTube rilevato</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download Options -->
+    <section class="download-section" id="download">
+      <div class="section-header">
+        <h2>Scegli il formato di <span class="gradient-text">download</span></h2>
+        <p id="trackTitle">La tua canzone è pronta per essere scaricata</p>
+      </div>
+
+      <div class="download-grid">
+        <!-- MP3 Card -->
+        <div class="download-card mp3" id="cardMp3">
+          <div class="card-icon">🎧</div>
+          <h3>MP3</h3>
+          <p class="card-desc">Formato compresso standard, compatibile con tutti i dispositivi. Qualità 128-320 kbps.</p>
+          <span class="card-tag">📦 Leggero</span>
+          <button class="btn-download" id="btnDownloadMp3">
+            ⬇️ Scarica MP3
+          </button>
+        </div>
+
+        <!-- MP3 Clean Card -->
+        <div class="download-card mp3-clean" id="cardMp3Clean">
+          <div class="card-icon">🛡️</div>
+          <h3>MP3 Clean</h3>
+          <p class="card-desc">MP3 con parolacce censurate. Le parti offensive vengono automaticamente silenziate.</p>
+          <span class="card-tag">🔇 Censurato</span>
+          <button class="btn-download" id="btnDownloadMp3Clean">
+            ⬇️ Scarica MP3 Clean
+          </button>
+        </div>
+
+        <!-- WAV Card -->
+        <div class="download-card wav" id="cardWav">
+          <div class="card-icon">🎼</div>
+          <h3>WAV</h3>
+          <p class="card-desc">Formato non compresso, qualità lossless. Ideale per produzioni e DJ set.</p>
+          <span class="card-tag">💎 Lossless</span>
+          <button class="btn-download" id="btnDownloadWav">
+            ⬇️ Scarica WAV
+          </button>
+        </div>
+
+        <!-- WAV Clean Card -->
+        <div class="download-card wav-clean" id="cardWavClean">
+          <div class="card-icon">✨</div>
+          <h3>WAV Clean</h3>
+          <p class="card-desc">WAV lossless con censura automatica. Qualità studio senza parolacce.</p>
+          <span class="card-tag">🔇💎 Clean + Lossless</span>
+          <button class="btn-download" id="btnDownloadWavClean">
+            ⬇️ Scarica WAV Clean
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clean Audio Processing -->
+    <section class="clean-section" id="clean">
+      <div class="section-header">
+        <h2>🛡️ Processo <span class="gradient-text">Clean Audio</span></h2>
+        <p>Carica il file audio scaricato per censurare automaticamente le parolacce</p>
+      </div>
+
+      <!-- Language Selection -->
+      <div style="text-align: center; margin-bottom: var(--space-lg);">
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: var(--space-sm);">Seleziona le lingue da analizzare:</p>
+        <div class="lang-select-wrapper" style="justify-content: center;">
+          <button class="lang-chip active" data-lang="it">🇮🇹 Italiano</button>
+          <button class="lang-chip active" data-lang="en">🇬🇧 English</button>
+          <button class="lang-chip active" data-lang="es">🇪🇸 Español</button>
+        </div>
+      </div>
+
+      <!-- Upload Area -->
+      <div class="clean-upload-area" id="cleanUploadArea">
+        <div class="upload-icon">📁</div>
+        <h3>Trascina il file audio qui</h3>
+        <p>oppure clicca per selezionare un file MP3 o WAV</p>
+      </div>
+      <input type="file" class="clean-file-input" id="cleanFileInput" accept=".mp3,.wav,audio/*">
+
+      <!-- Processing Panel -->
+      <div class="processing-panel" id="processingPanel">
+        <h3>⚙️ Elaborazione in corso...</h3>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p class="processing-status" id="processingStatus">Decodifica audio...</p>
+        <ul class="processing-steps" id="processingSteps">
+          <li id="step1"><span class="step-icon">⏳</span> Decodifica file audio</li>
+          <li id="step2"><span class="step-icon">⏳</span> Trascrizione con Speech Recognition</li>
+          <li id="step3"><span class="step-icon">⏳</span> Rilevamento parolacce</li>
+          <li id="step4"><span class="step-icon">⏳</span> Silenziamento sezioni</li>
+          <li id="step5"><span class="step-icon">⏳</span> Codifica file finale</li>
+        </ul>
+      </div>
+
+      <!-- Detected Words -->
+      <div class="detected-words" id="detectedWords">
+        <h4>⚠️ Parolacce rilevate:</h4>
+        <div class="words-list" id="wordsList"></div>
+      </div>
+
+      <!-- Result Download -->
+      <div class="clean-result" id="cleanResult">
+        <div class="section-header" style="margin-bottom: var(--space-lg);">
+          <h3>✅ Elaborazione completata!</h3>
+          <p>Il tuo file clean è pronto per il download</p>
+        </div>
+        <div class="clean-result-buttons">
+          <button class="btn-clean-download mp3" id="btnCleanResultMp3">
+            ⬇️ Scarica Clean MP3
+          </button>
+          <button class="btn-clean-download wav" id="btnCleanResultWav">
+            ⬇️ Scarica Clean WAV
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="charts-section" id="charts">
+      <div class="section-header">
+        <h2>🔥 Classifiche <span class="gradient-text">Discoteca</span></h2>
+        <p>Le canzoni più riprodotte nelle discoteche e nelle playlist più famose</p>
+      </div>
+
+      <div class="charts-carousel-wrapper">
+        <div class="charts-carousel" id="chartsCarousel">
+
+          <!-- 1001Tracklists -->
+          <a class="chart-card" href="https://www.1001tracklists.com/tracks/top" target="_blank" rel="noopener noreferrer">
+            <div class="chart-card-image" style="background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 3.5rem;">🎛️</span>
+            </div>
+            <div class="chart-card-body">
+              <h3>1001Tracklists Top Tracks</h3>
+              <p>Le tracce più suonate dai DJ di tutto il mondo nei club e nei festival.</p>
+              <span class="chart-card-tag">🎛️ DJ Charts</span>
+            </div>
+          </a>
+
+          <!-- Beatport -->
+          <a class="chart-card" href="https://www.beatport.com/top-100" target="_blank" rel="noopener noreferrer">
+            <div class="chart-card-image" style="background: linear-gradient(135deg, #0d1117, #1b4332, #2d6a4f); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 3.5rem;">💿</span>
+            </div>
+            <div class="chart-card-body">
+              <h3>Beatport Top 100</h3>
+              <p>La classifica ufficiale Beatport con i 100 brani elettronici più venduti.</p>
+              <span class="chart-card-tag">💿 Electronic</span>
+            </div>
+          </a>
+
+          <!-- Shazam -->
+          <a class="chart-card" href="https://www.shazam.com/charts/top-200/world" target="_blank" rel="noopener noreferrer">
+            <div class="chart-card-image" style="background: linear-gradient(135deg, #1a1a3e, #2d1b69, #4c1d95); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 3.5rem;">🔍</span>
+            </div>
+            <div class="chart-card-body">
+              <h3>Shazam Top 200</h3>
+              <p>Le canzoni più cercate su Shazam — scopri cosa ascolta il mondo.</p>
+              <span class="chart-card-tag">🔍 Discovery</span>
+            </div>
+          </a>
+
+          <!-- Spotify Viral -->
+          <a class="chart-card" href="https://open.spotify.com/playlist/37i9dQZEVXbLiRSasKsNU9" target="_blank" rel="noopener noreferrer">
+            <div class="chart-card-image" style="background: linear-gradient(135deg, #0d1117, #064e3b, #065f46); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 3.5rem;">📈</span>
+            </div>
+            <div class="chart-card-body">
+              <h3>Spotify Viral 50 Global</h3>
+              <p>I brani virali del momento su Spotify, in tendenza in tutto il mondo.</p>
+              <span class="chart-card-tag">📈 Viral</span>
+            </div>
+          </a>
+
+          <!-- Apple Music -->
+          <a class="chart-card" href="https://music.apple.com/us/playlist/top-100-global/pl.d25f5d1181894928af76c85c967f8f31" target="_blank" rel="noopener noreferrer">
+            <div class="chart-card-image" style="background: linear-gradient(135deg, #1a1a2e, #831843, #be185d); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 3.5rem;">🍎</span>
+            </div>
+            <div class="chart-card-body">
+              <h3>Apple Music Top 100</h3>
+              <p>La classifica globale Apple Music con i brani più ascoltati ogni giorno.</p>
+              <span class="chart-card-tag">🍎 Global</span>
+            </div>
+          </a>
+
+          <!-- SoundCloud Charts -->
+          <a class="chart-card" href="https://soundcloud.com/charts/top" target="_blank" rel="noopener noreferrer">
+            <div class="chart-card-image" style="background: linear-gradient(135deg, #1a1a2e, #7c2d12, #c2410c); display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 3.5rem;">☁️</span>
+            </div>
+            <div class="chart-card-body">
+              <h3>SoundCloud Top 50</h3>
+              <p>I brani più ascoltati e in tendenza su SoundCloud questa settimana.</p>
+              <span class="chart-card-tag">☁️ Trending</span>
+            </div>
+          </a>
+
+        </div>
+
+        <!-- Carousel Controls -->
+        <div class="carousel-controls">
+          <button class="carousel-btn" id="carouselPrev" aria-label="Precedente">◀</button>
+          <div class="carousel-dots" id="carouselDots"></div>
+          <button class="carousel-btn" id="carouselNext" aria-label="Successivo">▶</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      🎵 SoundGrab — Creato con ❤️ per la musica · 
+      <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a> · 
+      Usa responsabilmente per i tuoi contenuti
+    </p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
