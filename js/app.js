@@ -123,149 +123,139 @@
   }
 
   // =========================================
-  // DOWNLOAD SERVICES (Multiple Fallbacks)
+  // DIRECT DOWNLOAD SYSTEM
   // =========================================
-  const DOWNLOAD_SERVICES = {
-    youtube: [
-      {
-        name: 'Loader.to',
-        icon: '⚡',
-        desc: 'Veloce e affidabile. Supporta MP3 e WAV.',
-        getUrl: (url, format) => {
-          const f = format === 'wav' ? 'wav' : 'mp3';
-          return `https://loader.to/it/youtube-${f}-converter.html?url=${encodeURIComponent(url)}`;
+
+  // List of public cobalt API instances to try
+  const COBALT_INSTANCES = [
+    'https://api.cobalt.tools',
+    'https://cobalt-api.kwiatekmiki.com',
+    'https://cobalt.api.timelessnesses.me'
+  ];
+
+  // Fallback download URLs (direct navigation, same window)
+  function getFallbackUrl(url, platform, format) {
+    if (platform === 'youtube') {
+      const f = format === 'wav' ? 'wav' : 'mp3';
+      return `https://loader.to/it/youtube-${f}-converter.html?url=${encodeURIComponent(url)}`;
+    } else {
+      return `https://cobalt.tools/#url=${encodeURIComponent(url)}`;
+    }
+  }
+
+  // Try to download via cobalt API directly
+  async function tryDirectDownload(sourceUrl, format) {
+    const audioFormat = format === 'wav' ? 'wav' : 'mp3';
+
+    for (const instance of COBALT_INSTANCES) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
+        const response = await fetch(`${instance}/`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: sourceUrl,
+            downloadMode: 'audio',
+            audioFormat: audioFormat
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) continue;
+
+        const data = await response.json();
+
+        if (data.status === 'error') continue;
+
+        // Got a download URL
+        const downloadUrl = data.url;
+        if (downloadUrl) {
+          return downloadUrl;
         }
-      },
-      {
-        name: 'Y2Mate',
-        icon: '🔄',
-        desc: 'Popolare convertitore YouTube. MP3 fino a 320kbps.',
-        getUrl: (url) => `https://www.y2mate.com/youtube-mp3/${encodeURIComponent(url)}`
-      },
-      {
-        name: '9xBuddy',
-        icon: '🌐',
-        desc: 'Multi-piattaforma. Supporta molte qualità.',
-        getUrl: (url) => `https://9xbuddy.com/process?url=${encodeURIComponent(url)}`
-      },
-      {
-        name: 'SaveFrom.net',
-        icon: '💾',
-        desc: 'Servizio storico. Download rapido e semplice.',
-        getUrl: (url) => `https://en.savefrom.net/391GA/#url=${encodeURIComponent(url)}`
-      },
-      {
-        name: 'Cobalt.tools',
-        icon: '🔮',
-        desc: 'Open source, senza pubblicità. Potrebbe non funzionare con YouTube.',
-        getUrl: (url) => `https://cobalt.tools/#url=${encodeURIComponent(url)}`
+      } catch (e) {
+        // This instance failed, try next
+        console.warn(`Cobalt instance ${instance} failed:`, e.message);
+        continue;
       }
-    ],
-    soundcloud: [
-      {
-        name: 'Cobalt.tools',
-        icon: '🔮',
-        desc: 'Open-source, ottimo per SoundCloud. Nessuna pubblicità.',
-        getUrl: (url) => `https://cobalt.tools/#url=${encodeURIComponent(url)}`
-      },
-      {
-        name: 'SCloudDownloader',
-        icon: '☁️',
-        desc: 'Specializzato per SoundCloud. Download diretto.',
-        getUrl: (url) => `https://sclouddownloader.net/download?url=${encodeURIComponent(url)}`
-      },
-      {
-        name: '9xBuddy',
-        icon: '🌐',
-        desc: 'Multi-piattaforma. Supporta anche SoundCloud.',
-        getUrl: (url) => `https://9xbuddy.com/process?url=${encodeURIComponent(url)}`
-      },
-      {
-        name: 'SaveFrom.net',
-        icon: '💾',
-        desc: 'Supporta molte piattaforme incluso SoundCloud.',
-        getUrl: (url) => `https://en.savefrom.net/391GA/#url=${encodeURIComponent(url)}`
-      }
-    ]
-  };
+    }
 
-  // =========================================
-  // SERVICE SELECTION MODAL
-  // =========================================
-  function showServiceModal(url, format, isClean) {
-    const platform = state.platform;
-    const services = DOWNLOAD_SERVICES[platform] || DOWNLOAD_SERVICES.youtube;
-    const formatLabel = format.toUpperCase();
-
-    // Remove existing modal if any
-    const existing = document.getElementById('serviceModal');
-    if (existing) existing.remove();
-
-    const modal = document.createElement('div');
-    modal.id = 'serviceModal';
-    modal.className = 'service-modal-overlay';
-    modal.innerHTML = `
-      <div class="service-modal">
-        <div class="service-modal-header">
-          <h3>🎵 Scegli un servizio per scaricare in ${formatLabel}</h3>
-          <button class="service-modal-close" id="modalClose">✕</button>
-        </div>
-        <p class="service-modal-desc">
-          Seleziona uno dei servizi gratuiti qui sotto. Se uno non funziona, prova un altro!
-        </p>
-        <div class="service-list">
-          ${services.map((s, i) => `
-            <a class="service-item" href="${s.getUrl(url, format)}" target="_blank" rel="noopener noreferrer" data-index="${i}">
-              <span class="service-icon">${s.icon}</span>
-              <div class="service-info">
-                <strong>${s.name}</strong>
-                <span>${s.desc}</span>
-              </div>
-              <span class="service-arrow">→</span>
-            </a>
-          `).join('')}
-        </div>
-        ${isClean ? `
-          <div class="service-modal-hint">
-            💡 <strong>Per la versione Clean:</strong> scarica il file con uno dei servizi, poi caricalo nella sezione "Clean Audio" qui sotto per censurare le parolacce.
-          </div>
-        ` : ''}
-        ${format === 'wav' ? `
-          <div class="service-modal-hint">
-            💡 <strong>Suggerimento WAV:</strong> se il servizio offre solo MP3, scaricalo e poi usa la sezione "Clean Audio" per convertirlo in WAV.
-          </div>
-        ` : ''}
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Animate in
-    requestAnimationFrame(() => modal.classList.add('visible'));
-
-    // Close handlers
-    modal.querySelector('#modalClose').addEventListener('click', () => closeModal(modal));
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal(modal);
-    });
-
-    // Track clicks on services
-    modal.querySelectorAll('.service-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const serviceName = services[item.dataset.index].name;
-        showToast(`Apertura ${serviceName}...`, 'info');
-        setTimeout(() => closeModal(modal), 500);
-      });
-    });
+    return null; // All instances failed
   }
 
-  function closeModal(modal) {
-    modal.classList.remove('visible');
-    setTimeout(() => modal.remove(), 300);
-  }
+  // Main download function — no modals, no extra tabs
+  async function openDownload(url, format, isClean = false) {
+    const btn = document.querySelector(
+      isClean
+        ? (format === 'wav' ? '#btnDownloadWavClean' : '#btnDownloadMp3Clean')
+        : (format === 'wav' ? '#btnDownloadWav' : '#btnDownloadMp3')
+    );
 
-  function openDownload(url, format, isClean = false) {
-    showServiceModal(url, format, isClean);
+    // Show loading state on button
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Scaricamento...';
+    btn.disabled = true;
+
+    showToast('⏳ Preparazione download in corso...', 'info', 3000);
+
+    try {
+      // Try direct API download
+      const downloadUrl = await tryDirectDownload(url, format);
+
+      if (downloadUrl) {
+        // Success! Download directly
+        showToast('✅ Download avviato!', 'success');
+
+        // Fetch the audio file and trigger download
+        try {
+          const audioResponse = await fetch(downloadUrl);
+          const blob = await audioResponse.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = `download.${format === 'wav' ? 'wav' : 'mp3'}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        } catch (fetchErr) {
+          // If blob download fails, use direct link
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = `download.${format === 'wav' ? 'wav' : 'mp3'}`;
+          a.target = '_self';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      } else {
+        // API failed — redirect to fallback service in same window
+        showToast('⚠️ Download diretto non disponibile. Apertura convertitore...', 'warning', 4000);
+        const fallbackUrl = getFallbackUrl(url, state.platform, format);
+
+        // Small delay so user sees the toast
+        setTimeout(() => {
+          window.location.href = fallbackUrl;
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      showToast('❌ Errore durante il download. Provo servizio alternativo...', 'error', 3000);
+      const fallbackUrl = getFallbackUrl(url, state.platform, format);
+      setTimeout(() => {
+        window.location.href = fallbackUrl;
+      }, 1500);
+    } finally {
+      // Restore button
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
   }
 
   // =========================================
